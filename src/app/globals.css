@@ -1,0 +1,362 @@
+@import "tailwindcss";
+
+:root {
+  --color-app-bg: #07070a;
+  --color-panel: #101116;
+  --color-panel-2: #151720;
+  --color-accent: #fffb17;
+  --color-accent-soft: #fffda5;
+  --color-text: #eceff3;
+  --color-muted: #9ea5b0;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --shadow-soft: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-app: var(--color-app-bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 18% -5%, rgba(255, 251, 23, 0.14), transparent 30%),
+    radial-gradient(circle at 100% 110%, rgba(255, 251, 23, 0.08), transparent 35%),
+    linear-gradient(180deg, #09090c 0%, #07070a 45%, #050507 100%);
+}
+
+a {
+  color: inherit;
+}
+
+.sumar-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(21, 22, 28, 0.88) 0%, rgba(13, 14, 18, 0.97) 100%);
+  padding: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.sumar-input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(6, 7, 10, 0.62);
+  color: #edf1f5;
+  padding: 0.58rem 0.72rem;
+  font-size: 0.95rem;
+  outline: none;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.sumar-input:focus {
+  border-color: rgba(255, 251, 23, 0.72);
+  box-shadow: 0 0 0 3px rgba(255, 251, 23, 0.17);
+  background: rgba(8, 9, 12, 0.82);
+}
+
+.sumar-input::placeholder {
+  color: #828a97;
+}
+
+.sumar-button-primary,
+.sumar-button-secondary,
+.sumar-button-ghost,
+.sumar-segment {
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    opacity 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.sumar-button-primary,
+.sumar-button-secondary,
+.sumar-button-ghost {
+  min-height: 2.45rem;
+  padding: 0.55rem 0.88rem;
+}
+
+.sumar-button-primary {
+  color: #141502;
+  border-color: rgba(255, 251, 23, 0.8);
+  background: linear-gradient(180deg, #fffda9 0%, #fffb17 100%);
+  box-shadow: 0 8px 22px rgba(255, 251, 23, 0.2);
+}
+
+.sumar-button-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, #fffeae 0%, #fffc45 100%);
+}
+
+.sumar-button-secondary {
+  color: #e8ecf2;
+  border-color: rgba(255, 251, 23, 0.36);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sumar-button-secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(255, 251, 23, 0.1);
+}
+
+.sumar-button-ghost {
+  color: #d4d9e1;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sumar-button-ghost:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.sumar-button-primary:disabled,
+.sumar-button-secondary:disabled,
+.sumar-button-ghost:disabled,
+.sumar-segment:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
+}
+
+.sumar-badge {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 251, 23, 0.45);
+  background: rgba(9, 9, 12, 0.7);
+  padding: 0.22rem 0.56rem;
+  font-size: 0.71rem;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: #fff7af;
+}
+
+.sumar-segment {
+  min-height: 2.2rem;
+  border-color: transparent;
+  background: transparent;
+  color: #a8afbb;
+}
+
+.sumar-segment-active {
+  border-color: rgba(255, 251, 23, 0.52);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff7b7;
+}
+
+.shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+.sumar-slide-deck {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.sumar-slide {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: min(100%, 1920px);
+  margin-inline: auto;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #040506;
+  padding: 1.8rem;
+  min-height: min(86vh, 1080px);
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.45);
+}
+
+.sumar-slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 8% -20%, rgba(255, 251, 23, 0.09), transparent 32%),
+    radial-gradient(circle at 95% 120%, rgba(255, 251, 23, 0.06), transparent 34%);
+  z-index: -1;
+}
+
+.sumar-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.22;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 0px,
+    rgba(255, 255, 255, 0.02) 1px,
+    transparent 1px,
+    transparent 58px
+  );
+}
+
+.sumar-slide-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-block: 0.7rem;
+}
+
+.sumar-carousel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sumar-carousel-frame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 0.8rem;
+}
+
+.sumar-slide-carousel {
+  width: min(100%, 1920px);
+  max-height: 1080px;
+  aspect-ratio: 16 / 9;
+  margin-inline: auto;
+  min-height: 0;
+}
+
+.sumar-carousel-controls {
+  margin: 0.65rem auto 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(9, 9, 12, 0.82);
+}
+
+.sumar-carousel-button {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  color: #d5dae3;
+  font-size: 1rem;
+  transition: all 0.15s ease;
+}
+
+.sumar-carousel-button:hover:not(:disabled) {
+  border-color: rgba(255, 251, 23, 0.6);
+  color: #fffb17;
+}
+
+.sumar-carousel-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sumar-carousel-index {
+  min-width: 5rem;
+  text-align: center;
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+  color: #d3d9e2;
+}
+
+.sumar-carousel-progress-track {
+  margin-top: 0.5rem;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.sumar-carousel-progress-fill {
+  height: 100%;
+  width: 0;
+  background: #fffb17;
+}
+
+@media (max-width: 1024px) {
+  body {
+    background:
+      radial-gradient(circle at 30% -10%, rgba(255, 251, 23, 0.14), transparent 32%),
+      linear-gradient(180deg, #09090c 0%, #07070a 100%);
+  }
+
+  .sumar-slide {
+    min-height: min(76vh, 820px);
+    padding: 1.2rem 1.1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .sumar-slide {
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 767px) {
+  .sumar-slide {
+    padding: 1rem 0.9rem;
+    border-radius: 24px;
+    min-height: min(72vh, 620px);
+  }
+}
+
+@media print {
+  body {
+    background: #07070a;
+  }
+
+  .sumar-slide {
+    min-height: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    break-after: page;
+    page-break-after: always;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 1.1rem;
+  }
+
+  .sumar-slide:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .sumar-carousel-controls,
+  .sumar-carousel-progress-track {
+    display: none;
+  }
+}
