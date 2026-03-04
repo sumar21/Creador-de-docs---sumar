@@ -1,4 +1,4 @@
-import type { Browser } from "playwright";
+import type { Browser } from "playwright-core";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getRequestOrigin } from "@/lib/server/request-origin";
@@ -6,32 +6,56 @@ import { getDocumentRepository } from "@/lib/server/repositories";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type RouteContext = {
   params: Promise<{ slug: string }>;
 };
 
+function isServerlessRuntime(): boolean {
+  return process.env.VERCEL === "1" || process.cwd().startsWith("/var/task");
+}
+
+async function launchBrowser(): Promise<Browser> {
+  if (isServerlessRuntime()) {
+    const chromium = (await import("@sparticuz/chromium")).default;
+    const { chromium: playwrightChromium } = await import("playwright-core");
+
+    return playwrightChromium.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+  }
+
+  const { chromium } = await import("playwright");
+
+  return chromium.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
+}
+
 export async function GET(request: NextRequest, context: RouteContext) {
-  const { slug } = await context.params;
-  const repository = getDocumentRepository();
-  const record = await repository.getBySlug(slug);
-
-  if (!record) {
-    return NextResponse.json({ error: "Documento no encontrado." }, { status: 404 });
-  }
-
-  if (record.data.docType === "manual") {
-    return NextResponse.json(
-      { error: "Manual está en desarrollo y no puede exportarse en PDF." },
-      { status: 409 },
-    );
-  }
-
   let browser: Browser | null = null;
 
   try {
-    const { chromium } = await import("playwright");
-    browser = await chromium.launch({ headless: true });
+    const { slug } = await context.params;
+    const repository = getDocumentRepository();
+    const record = await repository.getBySlug(slug);
+
+    if (!record) {
+      return NextResponse.json({ error: "Documento no encontrado." }, { status: 404 });
+    }
+
+    if (record.data.docType === "manual") {
+      return NextResponse.json(
+        { error: "Manual está en desarrollo y no puede exportarse en PDF." },
+        { status: 409 },
+      );
+    }
+
+    browser = await launchBrowser();
 
     const page = await browser.newPage({
       viewport: {
@@ -40,12 +64,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     });
 
-    const targetUrl = `${getRequestOrigin(request)}/p/${slug}?print=1`;
+    const targetUrl = new URL(`/p/${slug}?print=1`, getRequestOrigin(request)).toString();
 
     await page.goto(targetUrl, {
-      waitUntil: "networkidle",
-      timeout: 30_000,
+      waitUntil: "domcontentloaded",
+      timeout: 45_000,
     });
+    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
 
     await page.emulateMedia({ media: "print" });
     await page.evaluate(async () => {
