@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 
 import { features } from "@/config/features";
@@ -36,6 +36,18 @@ function formatProposalCount(count: number): string {
   return `Total propuestas: ${count}`;
 }
 
+function getAutoSupportHourlyRate(total: number): number {
+  return Math.round(total * 0.2);
+}
+
+function getProposalSupportHourlyRate(proposal: ProposalOption): number {
+  if (typeof proposal.supportHourlyRate === "number" && Number.isFinite(proposal.supportHourlyRate) && proposal.supportHourlyRate >= 0) {
+    return proposal.supportHourlyRate;
+  }
+
+  return getAutoSupportHourlyRate(proposal.total);
+}
+
 export function ConfigPanel() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const notesFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -43,6 +55,8 @@ export function ConfigPanel() {
   const [notesError, setNotesError] = useState<string | null>(null);
   const [isImportingNotes, setIsImportingNotes] = useState(false);
   const [suggestionMessage, setSuggestionMessage] = useState<string | null>(null);
+  const [proposalTotalDrafts, setProposalTotalDrafts] = useState<Record<string, string>>({});
+  const [proposalSupportHourlyRateDrafts, setProposalSupportHourlyRateDrafts] = useState<Record<string, string>>({});
 
   const documentData = useBuilderStore((state) => state.documentData);
   const saveState = useBuilderStore((state) => state.saveState);
@@ -62,6 +76,52 @@ export function ConfigPanel() {
   const canAddProposal = documentData.proposals.length < features.maxProposals;
 
   const aiSuggestions = useMemo(() => documentData.aiSuggestions ?? [], [documentData.aiSuggestions]);
+
+  useEffect(() => {
+    setProposalTotalDrafts((currentDrafts) => {
+      const nextDrafts = { ...currentDrafts };
+      const proposalIds = new Set(documentData.proposals.map((proposal) => proposal.id));
+      let changed = false;
+
+      for (const proposal of documentData.proposals) {
+        if (nextDrafts[proposal.id] === undefined) {
+          nextDrafts[proposal.id] = String(proposal.total);
+          changed = true;
+        }
+      }
+
+      for (const draftId of Object.keys(nextDrafts)) {
+        if (!proposalIds.has(draftId)) {
+          delete nextDrafts[draftId];
+          changed = true;
+        }
+      }
+
+      return changed ? nextDrafts : currentDrafts;
+    });
+
+    setProposalSupportHourlyRateDrafts((currentDrafts) => {
+      const nextDrafts = { ...currentDrafts };
+      const proposalIds = new Set(documentData.proposals.map((proposal) => proposal.id));
+      let changed = false;
+
+      for (const proposal of documentData.proposals) {
+        if (nextDrafts[proposal.id] === undefined) {
+          nextDrafts[proposal.id] = String(getProposalSupportHourlyRate(proposal));
+          changed = true;
+        }
+      }
+
+      for (const draftId of Object.keys(nextDrafts)) {
+        if (!proposalIds.has(draftId)) {
+          delete nextDrafts[draftId];
+          changed = true;
+        }
+      }
+
+      return changed ? nextDrafts : currentDrafts;
+    });
+  }, [documentData.proposals]);
 
   const onNotesFilePick = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -207,6 +267,146 @@ export function ConfigPanel() {
     removeProposal(proposal.id);
   };
 
+  const handleProposalTotalChange = (proposal: ProposalOption, rawValue: string) => {
+    setProposalTotalDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [proposal.id]: rawValue,
+    }));
+
+    if (rawValue.trim() === "") {
+      return;
+    }
+
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return;
+    }
+
+    const previousAutoSupport = getAutoSupportHourlyRate(proposal.total);
+    const currentSupport = getProposalSupportHourlyRate(proposal);
+    const nextAutoSupport = getAutoSupportHourlyRate(parsed);
+    const shouldAutoUpdateSupport = proposal.supportHourlyRate === undefined || currentSupport === previousAutoSupport;
+
+    updateProposal(
+      proposal.id,
+      shouldAutoUpdateSupport
+        ? {
+            total: parsed,
+            supportHourlyRate: nextAutoSupport,
+          }
+        : {
+            total: parsed,
+          },
+    );
+
+    if (shouldAutoUpdateSupport) {
+      setProposalSupportHourlyRateDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [proposal.id]: String(nextAutoSupport),
+      }));
+    }
+  };
+
+  const handleProposalTotalBlur = (proposal: ProposalOption) => {
+    const currentDraft = proposalTotalDrafts[proposal.id] ?? String(proposal.total);
+    const trimmedDraft = currentDraft.trim();
+
+    if (trimmedDraft === "") {
+      return;
+    }
+
+    const parsed = Number(trimmedDraft);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      setProposalTotalDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [proposal.id]: String(proposal.total),
+      }));
+      return;
+    }
+
+    if (parsed !== proposal.total) {
+      const previousAutoSupport = getAutoSupportHourlyRate(proposal.total);
+      const currentSupport = getProposalSupportHourlyRate(proposal);
+      const nextAutoSupport = getAutoSupportHourlyRate(parsed);
+      const shouldAutoUpdateSupport = proposal.supportHourlyRate === undefined || currentSupport === previousAutoSupport;
+
+      updateProposal(
+        proposal.id,
+        shouldAutoUpdateSupport
+          ? {
+              total: parsed,
+              supportHourlyRate: nextAutoSupport,
+            }
+          : {
+              total: parsed,
+            },
+      );
+
+      if (shouldAutoUpdateSupport) {
+        setProposalSupportHourlyRateDrafts((currentDrafts) => ({
+          ...currentDrafts,
+          [proposal.id]: String(nextAutoSupport),
+        }));
+      }
+    }
+
+    setProposalTotalDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [proposal.id]: String(parsed),
+    }));
+  };
+
+  const handleProposalSupportHourlyRateChange = (proposal: ProposalOption, rawValue: string) => {
+    setProposalSupportHourlyRateDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [proposal.id]: rawValue,
+    }));
+
+    if (rawValue.trim() === "") {
+      return;
+    }
+
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return;
+    }
+
+    updateProposal(proposal.id, { supportHourlyRate: parsed });
+  };
+
+  const handleProposalSupportHourlyRateBlur = (proposal: ProposalOption) => {
+    const currentDraft = proposalSupportHourlyRateDrafts[proposal.id] ?? String(getProposalSupportHourlyRate(proposal));
+    const trimmedDraft = currentDraft.trim();
+
+    if (trimmedDraft === "") {
+      const autoSupport = getAutoSupportHourlyRate(proposal.total);
+      updateProposal(proposal.id, { supportHourlyRate: autoSupport });
+      setProposalSupportHourlyRateDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [proposal.id]: String(autoSupport),
+      }));
+      return;
+    }
+
+    const parsed = Number(trimmedDraft);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      setProposalSupportHourlyRateDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [proposal.id]: String(getProposalSupportHourlyRate(proposal)),
+      }));
+      return;
+    }
+
+    if (parsed !== proposal.supportHourlyRate) {
+      updateProposal(proposal.id, { supportHourlyRate: parsed });
+    }
+
+    setProposalSupportHourlyRateDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [proposal.id]: String(parsed),
+    }));
+  };
+
   return (
     <div className="space-y-4 p-4 md:p-5">
       <section className="sumar-card space-y-3">
@@ -326,7 +526,7 @@ export function ConfigPanel() {
                 />
               </label>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 <label className="space-y-1 text-sm text-zinc-300">
                   <span>Moneda</span>
                   <select
@@ -350,11 +550,22 @@ export function ConfigPanel() {
                     type="number"
                     min={0}
                     step="0.01"
-                    value={proposal.total}
-                    onChange={(event) => {
-                      const parsed = Number(event.target.value);
-                      updateProposal(proposal.id, { total: Number.isFinite(parsed) ? parsed : 0 });
-                    }}
+                    value={proposalTotalDrafts[proposal.id] ?? String(proposal.total)}
+                    onBlur={() => handleProposalTotalBlur(proposal)}
+                    onChange={(event) => handleProposalTotalChange(proposal, event.target.value)}
+                  />
+                </label>
+
+                <label className="space-y-1 text-sm text-zinc-300">
+                  <span>Valor hora</span>
+                  <input
+                    className="sumar-input"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={proposalSupportHourlyRateDrafts[proposal.id] ?? String(getProposalSupportHourlyRate(proposal))}
+                    onBlur={() => handleProposalSupportHourlyRateBlur(proposal)}
+                    onChange={(event) => handleProposalSupportHourlyRateChange(proposal, event.target.value)}
                   />
                 </label>
               </div>

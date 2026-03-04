@@ -45,6 +45,7 @@ function createDefaultProposal(index: number): ProposalOption {
     title: `Propuesta ${String.fromCharCode(65 + index)}`,
     currency: "ARS",
     total: 0,
+    supportHourlyRate: 0,
     note: "",
   };
 }
@@ -232,6 +233,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
               title: payloadTitle,
               currency: payloadCurrency,
               total: 0,
+              supportHourlyRate: 0,
               note: "",
             },
           ],

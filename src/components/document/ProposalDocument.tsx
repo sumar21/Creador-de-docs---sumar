@@ -157,6 +157,18 @@ function formatCurrency(value: number, currency: "ARS" | "USD"): string {
   return formatted.replace(/\u00a0/g, " ");
 }
 
+function getAutoSupportHourlyRate(total: number): number {
+  return Math.round(total * 0.2);
+}
+
+function getProposalSupportHourlyRate(proposal: ProposalOption): number {
+  if (typeof proposal.supportHourlyRate === "number" && Number.isFinite(proposal.supportHourlyRate) && proposal.supportHourlyRate >= 0) {
+    return proposal.supportHourlyRate;
+  }
+
+  return getAutoSupportHourlyRate(proposal.total);
+}
+
 function AccentLabel({ children, animate = true }: { children: React.ReactNode; animate?: boolean }) {
   if (!animate) {
     return <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#fffb17]">{children}</p>;
@@ -382,10 +394,9 @@ function buildSlides(data: DocumentData, endAction?: React.ReactNode, animate = 
   const estimationValue =
     mainProposal && mainProposal.total > 0 ? formatCurrency(mainProposal.total, mainProposal.currency) : "$xxx.xxx";
 
+  const supportAmount = mainProposal ? getProposalSupportHourlyRate(mainProposal) : 0;
   const supportValue =
-    mainProposal && mainProposal.total > 0
-      ? formatCurrency(Math.round(mainProposal.total * 0.2), mainProposal.currency)
-      : "$xx.xxx";
+    mainProposal && supportAmount > 0 ? formatCurrency(supportAmount, mainProposal.currency) : "$xx.xxx";
 
   return [
     <SlideSequence

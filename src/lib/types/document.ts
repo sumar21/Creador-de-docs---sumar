@@ -8,6 +8,7 @@ export interface ProposalOption {
   title: string;
   currency: "ARS" | "USD";
   total: number;
+  supportHourlyRate?: number;
   note?: string;
 }
 

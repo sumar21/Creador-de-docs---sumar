@@ -5,6 +5,7 @@ export const proposalOptionSchema = z.object({
   title: z.string().trim().min(1).max(120),
   currency: z.enum(["ARS", "USD"]),
   total: z.number().finite().nonnegative(),
+  supportHourlyRate: z.number().finite().nonnegative().optional(),
   note: z.string().trim().max(240).optional(),
 });
 
@@ -13,6 +14,7 @@ export const draftProposalOptionSchema = z.object({
   title: z.string().max(120),
   currency: z.enum(["ARS", "USD"]),
   total: z.number().finite().nonnegative(),
+  supportHourlyRate: z.number().finite().nonnegative().optional(),
   note: z.string().max(240).optional(),
 });
 
