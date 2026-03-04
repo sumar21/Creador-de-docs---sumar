@@ -6,6 +6,7 @@ Webapp Next.js para generar propuestas comerciales con identidad Sumar.
 
 - Builder en `/builder` con split view (configuración + preview)
 - Template lockeado (sin edición libre de layout/estilo)
+- Importación de notas desde `.pdf` o `.docx` con resumen automático
 - Publicación en link público `/p/[slug]`
 - Exportación PDF vía Playwright en `/api/pdf/[slug]`
 - Autosave local en `localStorage`
@@ -48,9 +49,10 @@ npm run dev
 ## Flujo MVP
 
 1. Editar cliente, tipo de documento, propuestas y notas IA en `/builder`.
-2. `Generar Link` crea un slug y guarda el documento publicado.
-3. Abrir link público (`/p/[slug]`) para compartir.
-4. `Exportar PDF` genera y descarga el PDF del mismo documento.
+2. (Opcional) subir un Word/PDF en el bloque de notas para extraer y resumir contenido anterior.
+3. `Generar Link` crea un slug y guarda el documento publicado.
+4. Abrir link público (`/p/[slug]`) para compartir.
+5. `Exportar PDF` genera y descarga el PDF del mismo documento.
 
 ## Endpoints
 
@@ -58,6 +60,11 @@ npm run dev
   - Request: `{ data: DocumentData }`
   - Response: `{ slug, url, status: 'published' }`
   - Responde `422` para `docType = manual`
+
+- `POST /api/ai/file-summary`
+  - Request: `multipart/form-data` con `file` (`.pdf` o `.docx`, máx. 12MB)
+  - Response: `{ fileName, extractedCharacterCount, summary }`
+  - Responde `422` si no se detecta texto utilizable (ejemplo: PDF escaneado sin OCR)
 
 - `GET /api/pdf/[slug]`
   - Devuelve PDF (`application/pdf`)

@@ -47,7 +47,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
       timeout: 30_000,
     });
 
-    await page.emulateMedia({ media: "screen" });
+    await page.emulateMedia({ media: "print" });
+    await page.evaluate(async () => {
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
+      }
+    });
 
     const pdfBuffer = await page.pdf({
       format: "A4",

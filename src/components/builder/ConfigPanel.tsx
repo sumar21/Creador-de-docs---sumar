@@ -5,11 +5,20 @@ import Image from "next/image";
 
 import { features } from "@/config/features";
 import { getMockSuggestionsFromNotes } from "@/lib/ai/mock-suggestions";
+import { prepareImageUpload } from "@/lib/image/prepare-image-upload";
 import type { ProposalOption } from "@/lib/types/document";
 import { useBuilderStore } from "@/store/builder-store";
 
-const ACCEPTED_LOGO_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/svg+xml"];
-const MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
+const ACCEPTED_LOGO_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"];
+const MAX_LOGO_INPUT_SIZE_BYTES = 12 * 1024 * 1024;
+const MAX_LOGO_OUTPUT_SIZE_BYTES = 350 * 1024;
+const ACCEPTED_NOTES_EXTENSIONS = new Set(["pdf", "docx"]);
+const ACCEPTED_NOTES_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+];
+const MAX_NOTES_INPUT_SIZE_BYTES = 12 * 1024 * 1024;
 
 function saveStateLabel(value: "saved" | "dirty" | "saving"): string {
   if (value === "saved") {
@@ -29,7 +38,10 @@ function formatProposalCount(count: number): string {
 
 export function ConfigPanel() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const notesFileInputRef = useRef<HTMLInputElement | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [notesError, setNotesError] = useState<string | null>(null);
+  const [isImportingNotes, setIsImportingNotes] = useState(false);
   const [suggestionMessage, setSuggestionMessage] = useState<string | null>(null);
 
   const documentData = useBuilderStore((state) => state.documentData);
@@ -51,6 +63,76 @@ export function ConfigPanel() {
 
   const aiSuggestions = useMemo(() => documentData.aiSuggestions ?? [], [documentData.aiSuggestions]);
 
+  const onNotesFilePick = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setNotesError(null);
+
+    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const validExtension = ACCEPTED_NOTES_EXTENSIONS.has(extension);
+    const validMimeType = file.type ? ACCEPTED_NOTES_TYPES.includes(file.type) : true;
+
+    if (!validExtension || !validMimeType) {
+      setNotesError("Formato inválido. Subí un archivo PDF o DOCX.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_NOTES_INPUT_SIZE_BYTES) {
+      setNotesError("El archivo excede 12MB. Elegí uno más liviano.");
+      event.target.value = "";
+      return;
+    }
+
+    setIsImportingNotes(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/ai/file-summary", {
+        method: "POST",
+        body: formData,
+      });
+
+      const payload = (await response.json()) as {
+        error?: string;
+        fileName?: string;
+        summary?: string;
+        extractedCharacterCount?: number;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo procesar el archivo.");
+      }
+
+      const summary = typeof payload.summary === "string" ? payload.summary.trim() : "";
+      if (!summary) {
+        throw new Error("No se pudo generar el resumen del archivo.");
+      }
+
+      setMeetingNotes(summary);
+
+      const suggestions = getMockSuggestionsFromNotes(summary);
+      setAISuggestions(suggestions);
+
+      const chars =
+        typeof payload.extractedCharacterCount === "number" && Number.isFinite(payload.extractedCharacterCount)
+          ? payload.extractedCharacterCount
+          : summary.length;
+
+      setSuggestionMessage(`Archivo procesado (${chars} caracteres). Resumen cargado en Notas IA.`);
+    } catch (error) {
+      setNotesError(error instanceof Error ? error.message : "No se pudo procesar el archivo.");
+    } finally {
+      setIsImportingNotes(false);
+      event.target.value = "";
+    }
+  };
+
   const onLogoPick = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -60,28 +142,34 @@ export function ConfigPanel() {
     setLogoError(null);
 
     if (!ACCEPTED_LOGO_TYPES.includes(file.type)) {
-      setLogoError("Formato inválido. Usá PNG, SVG o JPG.");
+      setLogoError("Formato inválido. Usá PNG, WEBP, SVG o JPG.");
       return;
     }
 
-    if (file.size > MAX_LOGO_SIZE_BYTES) {
-      setLogoError("El logo excede 2MB. Elegí un archivo más liviano.");
+    if (file.size > MAX_LOGO_INPUT_SIZE_BYTES) {
+      setLogoError("La imagen excede 12MB. Elegí un archivo más liviano.");
       return;
     }
 
-    const result = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
-      reader.readAsDataURL(file);
-    }).catch(() => "");
+    const result = await prepareImageUpload(file, {
+      maxWidth: 1200,
+      maxHeight: 1200,
+      maxOutputBytes: MAX_LOGO_OUTPUT_SIZE_BYTES,
+      quality: 0.84,
+      minQuality: 0.55,
+    }).catch(() => null);
 
-    if (!result) {
+    if (!result?.dataUrl) {
       setLogoError("No se pudo procesar el logo.");
       return;
     }
 
-    setClientLogo(result);
+    if (result.byteSize > MAX_LOGO_OUTPUT_SIZE_BYTES && file.type !== "image/svg+xml") {
+      setLogoError("No se pudo comprimir lo suficiente. Probá con una imagen de menor resolución.");
+      return;
+    }
+
+    setClientLogo(result.dataUrl);
 
     if (event.target) {
       event.target.value = "";
@@ -156,6 +244,8 @@ export function ConfigPanel() {
                 width={128}
                 height={40}
                 unoptimized
+                loading="eager"
+                sizes="128px"
                 className="h-10 w-auto max-w-[128px] object-contain"
               />
               <div className="ml-auto flex gap-2">
@@ -180,7 +270,7 @@ export function ConfigPanel() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml"
+            accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml"
             className="hidden"
             onChange={onLogoPick}
           />
@@ -327,6 +417,29 @@ export function ConfigPanel() {
 
       <section className="sumar-card space-y-4">
         <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-zinc-300">4) Notas de reunión (IA)</h2>
+
+        <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+          <p className="text-sm text-zinc-200">Importar notas desde Word o PDF</p>
+          <p className="text-xs text-zinc-500">Subí un archivo `.pdf` o `.docx` (máximo 12MB) para extraer y resumir su contenido.</p>
+          <button
+            type="button"
+            className="sumar-button-secondary w-full"
+            onClick={() => notesFileInputRef.current?.click()}
+            disabled={isImportingNotes}
+          >
+            {isImportingNotes ? "Procesando archivo..." : "Subir archivo y resumir"}
+          </button>
+
+          <input
+            ref={notesFileInputRef}
+            type="file"
+            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+            className="hidden"
+            onChange={onNotesFilePick}
+          />
+
+          {notesError ? <p className="text-xs text-red-300">{notesError}</p> : null}
+        </div>
 
         <label className="space-y-2 text-sm text-zinc-300">
           <span>Notas de IA (brief)</span>

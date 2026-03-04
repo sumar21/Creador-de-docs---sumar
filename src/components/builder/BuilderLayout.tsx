@@ -118,6 +118,42 @@ export function BuilderLayout() {
     void publishDocument(true);
   }, [publishDocument]);
 
+  const downloadPdfBySlug = useCallback(async (slug: string) => {
+    const response = await fetch(`/api/pdf/${slug}`);
+
+    if (!response.ok) {
+      let errorMessage = "No se pudo exportar el PDF.";
+
+      try {
+        const payload = (await response.json()) as { error?: string };
+        if (payload.error) {
+          errorMessage = payload.error;
+        }
+      } catch {
+        // Keep default error message when response isn't JSON.
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    const pdfBlob = await response.blob();
+    if (pdfBlob.size === 0) {
+      throw new Error("El PDF generado está vacío.");
+    }
+
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const downloadLink = document.createElement("a");
+    downloadLink.href = blobUrl;
+    downloadLink.download = `propuesta-${slug}.pdf`;
+    downloadLink.style.display = "none";
+
+    document.body.append(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1_000);
+  }, []);
+
   const handleExportPdf = useCallback(async () => {
     if (manualSelected) {
       setActionError("Manual está en desarrollo: PDF no disponible por ahora.");
@@ -137,13 +173,13 @@ export function BuilderLayout() {
         throw new Error("No fue posible obtener el slug para exportar el PDF.");
       }
 
-      window.open(`/api/pdf/${targetSlug}`, "_blank", "noopener,noreferrer");
+      await downloadPdfBySlug(targetSlug);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "No se pudo exportar el PDF.");
     } finally {
       setExportingPdf(false);
     }
-  }, [docStatus, lastPublishedSlug, manualSelected, publishDocument]);
+  }, [docStatus, downloadPdfBySlug, lastPublishedSlug, manualSelected, publishDocument]);
 
   const publishUrl = useMemo(() => {
     if (!publishResult) {
