@@ -388,7 +388,11 @@ function buildSlides(data: DocumentData, endAction?: React.ReactNode, animate = 
       : "$xx.xxx";
 
   return [
-    <SlideSequence key="s1" animate={animate} className="sumar-reference-scale flex h-full flex-col">
+    <SlideSequence
+      key={`s1-${hasClientLogo ? "with-logo" : "without-logo"}`}
+      animate={animate}
+      className="sumar-reference-scale flex h-full flex-col"
+    >
       <div className="flex flex-1 items-center justify-center">
         <div className="grid w-full max-w-[860px] items-center gap-5 md:grid-cols-[1fr_auto_1fr]">
           <BlockReveal animate={animate}>
@@ -409,7 +413,7 @@ function buildSlides(data: DocumentData, endAction?: React.ReactNode, animate = 
 
           <div className="md:justify-self-start md:text-left">
             {hasClientLogo ? (
-              <BlockReveal animate={animate}>
+              <div>
                 <Image
                   src={data.client.logoUrl ?? ""}
                   alt={`Logo ${data.client.name}`}
@@ -420,7 +424,7 @@ function buildSlides(data: DocumentData, endAction?: React.ReactNode, animate = 
                   sizes="(max-width: 768px) 80vw, 360px"
                   className="h-24 w-[360px] max-w-full object-contain"
                 />
-              </BlockReveal>
+              </div>
             ) : (
               <TextReveal animate={animate}>
                 <p className="break-words text-3xl font-semibold text-zinc-100">{data.client.name}</p>
