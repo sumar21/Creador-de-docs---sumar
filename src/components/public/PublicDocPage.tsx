@@ -1,7 +1,5 @@
-import { Download01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-
 import { ProposalDocument } from "@/components/document/ProposalDocument";
+import { PublicPdfDownloadButton } from "@/components/public/PublicPdfDownloadButton";
 import type { DocumentData } from "@/lib/types/document";
 
 type PublicDocPageProps = {
@@ -11,16 +9,7 @@ type PublicDocPageProps = {
 };
 
 export function PublicDocPage({ slug, data, printMode = false }: PublicDocPageProps) {
-  const endAction = !printMode ? (
-    <a
-      href={`/api/pdf/${slug}`}
-      download={`propuesta-${slug}.pdf`}
-      className="sumar-button-primary inline-flex items-center gap-2"
-    >
-      <HugeiconsIcon icon={Download01Icon} size={16} color="currentColor" strokeWidth={2} />
-      Descargar propuesta
-    </a>
-  ) : undefined;
+  const endAction = !printMode ? <PublicPdfDownloadButton slug={slug} /> : undefined;
 
   return (
     <main
