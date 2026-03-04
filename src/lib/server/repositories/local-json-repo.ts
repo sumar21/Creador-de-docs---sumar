@@ -7,7 +7,11 @@ import type { DocumentRepository } from "./document-repo";
 
 type StoreShape = Record<string, PublishedDocumentRecord>;
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DEFAULT_LOCAL_DATA_DIR = path.join(process.cwd(), ".data");
+const SERVERLESS_DATA_DIR = path.join("/tmp", "sumar-proposal-builder-data");
+const DATA_DIR =
+  process.env.PUBLISHED_DOCUMENTS_DATA_DIR ||
+  (process.cwd().startsWith("/var/task") ? SERVERLESS_DATA_DIR : DEFAULT_LOCAL_DATA_DIR);
 const DATA_FILE = path.join(DATA_DIR, "published-documents.json");
 
 let writeQueue = Promise.resolve();

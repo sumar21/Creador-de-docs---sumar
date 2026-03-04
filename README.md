@@ -88,6 +88,7 @@ npm run dev
 ## Notas de persistencia
 
 - Draft editor: `localStorage` (`sumar-proposal-builder-draft-v1`)
-- Publicados: JSON local en `.data/published-documents.json`
+- Publicados: JSON local en `.data/published-documents.json` (en serverless usa `/tmp/sumar-proposal-builder-data/published-documents.json`)
+- Variable opcional: `PUBLISHED_DOCUMENTS_DATA_DIR` para definir la carpeta de persistencia
 - Se dejó stub para migración futura a Supabase:
   - `src/lib/server/repositories/supabase-repo.ts`
