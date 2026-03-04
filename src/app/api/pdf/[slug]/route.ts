@@ -2,7 +2,7 @@ import type { Browser } from "playwright";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getRequestOrigin } from "@/lib/server/request-origin";
-import { getDocumentRepository } from "@/lib/server/repositories/local-json-repo";
+import { getDocumentRepository } from "@/lib/server/repositories";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

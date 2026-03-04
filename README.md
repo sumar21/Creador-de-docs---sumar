@@ -88,7 +88,27 @@ npm run dev
 ## Notas de persistencia
 
 - Draft editor: `localStorage` (`sumar-proposal-builder-draft-v1`)
-- Publicados: JSON local en `.data/published-documents.json` (en serverless usa `/tmp/sumar-proposal-builder-data/published-documents.json`)
-- Variable opcional: `PUBLISHED_DOCUMENTS_DATA_DIR` para definir la carpeta de persistencia
-- Se dejó stub para migración futura a Supabase:
-  - `src/lib/server/repositories/supabase-repo.ts`
+- Publicados:
+  - Modo local (default): JSON en `.data/published-documents.json`
+  - Serverless fallback: `/tmp/sumar-proposal-builder-data/published-documents.json` (no persistente entre invocaciones)
+  - Modo persistente recomendado para Vercel: Supabase (`src/lib/server/repositories/supabase-repo.ts`)
+- Variables opcionales:
+  - `PUBLISHED_DOCUMENTS_DATA_DIR`: carpeta de persistencia para modo JSON local
+  - `SUPABASE_URL` (o `NEXT_PUBLIC_SUPABASE_URL`): URL del proyecto Supabase (activa modo Supabase)
+  - `SUPABASE_SERVICE_ROLE_KEY`: service role key de Supabase
+    - aliases aceptados: `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_KEY`
+  - `SUPABASE_PUBLISHED_DOCUMENTS_TABLE`: tabla (default `published_documents`)
+
+### Supabase (recomendado en Vercel)
+
+Crear una tabla `published_documents` (o el nombre que uses en `SUPABASE_PUBLISHED_DOCUMENTS_TABLE`) con estas columnas mínimas:
+
+- `slug` (`text`, primary key)
+- `data` (`jsonb`, not null)
+- `created_at` (`timestamptz`, not null)
+- `updated_at` (`timestamptz`, not null)
+- `status` (`text`, not null, valor esperado: `published`)
+
+Si `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` están definidos, la app usa Supabase automáticamente y evita los `404` por pérdida de datos en filesystem serverless.
+
+En Vercel, si la configuración de Supabase está incompleta, la API falla explícitamente (500) en vez de caer a persistencia local efímera.

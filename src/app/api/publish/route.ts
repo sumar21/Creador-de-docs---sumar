@@ -2,7 +2,7 @@ import { customAlphabet } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getRequestOrigin } from "@/lib/server/request-origin";
-import { getDocumentRepository } from "@/lib/server/repositories/local-json-repo";
+import { getDocumentRepository, getDocumentRepositoryProvider } from "@/lib/server/repositories";
 import type { PublishedDocumentRecord } from "@/lib/types/document";
 import { publishPayloadSchema } from "@/lib/validation/document";
 
@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
         slug,
         url: `${getRequestOrigin(request)}/p/${slug}`,
         status: "published",
+        storageProvider: getDocumentRepositoryProvider(),
       },
       { status: 200 },
     );

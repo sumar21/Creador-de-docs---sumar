@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { PublicDocPage } from "@/components/public/PublicDocPage";
-import { getDocumentRepository } from "@/lib/server/repositories/local-json-repo";
+import { getDocumentRepository } from "@/lib/server/repositories";
 
 type PublicPageProps = {
   params: Promise<{ slug: string }>;
