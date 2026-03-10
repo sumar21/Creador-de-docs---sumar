@@ -59,8 +59,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const page = await browser.newPage({
       viewport: {
-        width: 1440,
-        height: 2200,
+        width: 1920,
+        height: 1080,
       },
     });
 
@@ -80,13 +80,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
     });
 
     const pdfBuffer = await page.pdf({
-      format: "A4",
+      width: "1920px",
+      height: "1080px",
       printBackground: true,
       margin: {
-        top: "12mm",
-        right: "10mm",
-        bottom: "12mm",
-        left: "10mm",
+        top: "0",
+        right: "0",
+        bottom: "0",
+        left: "0",
       },
     });
 

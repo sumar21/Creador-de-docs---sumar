@@ -13,7 +13,7 @@ export function PublicDocPage({ slug, data, printMode = false }: PublicDocPagePr
 
   return (
     <main
-      className={`sumar-public-main ${printMode ? "min-h-dvh" : "h-dvh overflow-hidden"} bg-app px-4 py-4 text-zinc-100 md:px-8`}
+      className={`sumar-public-main ${printMode ? "min-h-dvh p-0" : "h-dvh overflow-hidden px-4 py-4 md:px-8"} bg-app text-zinc-100`}
     >
       <div className={`sumar-public-shell mx-auto max-w-[1920px] ${printMode ? "" : "flex h-full min-h-0 flex-col"}`}>
         <div className={`sumar-public-content ${printMode ? "" : "min-h-0 flex-1"}`}>

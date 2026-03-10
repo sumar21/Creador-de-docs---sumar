@@ -552,23 +552,32 @@ a {
 }
 
 @media print {
+  @page {
+    size: 1920px 1080px;
+    margin: 0;
+  }
+
   html,
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-  }
-
-  body {
-    background: #07070a;
+    margin: 0;
+    padding: 0;
+    background: #040506;
   }
 
   .sumar-public-main {
     padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    background: #040506 !important;
   }
 
   .sumar-public-shell,
   .sumar-public-content {
     max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .sumar-slide-deck {
@@ -576,16 +585,26 @@ a {
   }
 
   .sumar-slide {
-    width: 100%;
+    width: 1920px;
+    height: 1080px;
+    min-height: 1080px;
+    max-height: 1080px;
     margin: 0;
-    min-height: 0;
+    overflow: hidden;
     break-inside: avoid;
     page-break-inside: avoid;
     break-after: page;
     page-break-after: always;
     border-radius: 0;
+    border: none;
     box-shadow: none;
-    padding: 1.1rem;
+    padding: 2.5rem 3rem;
+    background: #040506;
+  }
+
+  .sumar-slide::before,
+  .sumar-slide::after {
+    display: block;
   }
 
   .sumar-slide:last-child {
@@ -600,6 +619,7 @@ a {
 
   .sumar-slide-content {
     padding-block: 0;
+    height: 100%;
   }
 
   .sumar-reference-scale {
