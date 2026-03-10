@@ -13,7 +13,7 @@ type RouteContext = {
 };
 
 function isServerlessRuntime(): boolean {
-  return process.env.VERCEL === "1" || process.cwd().startsWith("/var/task");
+  return process.env.VERCEL === "1";
 }
 
 async function launchBrowser(): Promise<Browser> {
@@ -28,12 +28,50 @@ async function launchBrowser(): Promise<Browser> {
     });
   }
 
-  const { chromium } = await import("playwright");
+  const { chromium: playwrightChromium } = await import("playwright-core");
 
-  return chromium.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  // Try to find a local Chromium executable from playwright cache
+  const localExec = process.env.PLAYWRIGHT_CHROMIUM_PATH;
+  if (localExec) {
+    return playwrightChromium.launch({
+      executablePath: localExec,
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+  }
+
+  // Try playwright's bundled browser first, then search cache for any available chromium
+  try {
+    const { chromium } = await import("playwright");
+    return await chromium.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+  } catch {
+    const fs = await import("fs");
+    const cacheDirs = [
+      `${process.env.HOME}/.cache/ms-playwright`,
+      "/root/.cache/ms-playwright",
+    ];
+    for (const cacheDir of cacheDirs) {
+      try {
+        const entries = fs.readdirSync(cacheDir).filter((e: string) => e.startsWith("chromium-")).sort().reverse();
+        for (const entry of entries) {
+          const execPath = `${cacheDir}/${entry}/chrome-linux/chrome`;
+          if (fs.existsSync(execPath)) {
+            return await playwrightChromium.launch({
+              executablePath: execPath,
+              headless: true,
+              args: ["--no-sandbox", "--disable-setuid-sandbox"],
+            });
+          }
+        }
+      } catch {
+        continue;
+      }
+    }
+    throw new Error("No se encontró un navegador Chromium disponible. Ejecutá 'npx playwright install chromium'.");
+  }
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
