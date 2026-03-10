@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@hugeicons/core-free-icons": "^3.3.0",
     "@hugeicons/react": "^1.1.5",
     "@sparticuz/chromium": "^143.0.4",

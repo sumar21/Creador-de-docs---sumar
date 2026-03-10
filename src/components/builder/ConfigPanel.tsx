@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 
 import { features } from "@/config/features";
-import { getMockSuggestionsFromNotes } from "@/lib/ai/mock-suggestions";
+
 import { prepareImageUpload } from "@/lib/image/prepare-image-upload";
 import type { ProposalOption } from "@/lib/types/document";
 import { useBuilderStore } from "@/store/builder-store";
@@ -54,6 +54,7 @@ export function ConfigPanel() {
   const [logoError, setLogoError] = useState<string | null>(null);
   const [notesError, setNotesError] = useState<string | null>(null);
   const [isImportingNotes, setIsImportingNotes] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [suggestionMessage, setSuggestionMessage] = useState<string | null>(null);
   const [proposalTotalDrafts, setProposalTotalDrafts] = useState<Record<string, string>>({});
   const [proposalSupportHourlyRateDrafts, setProposalSupportHourlyRateDrafts] = useState<Record<string, string>>({});
@@ -163,6 +164,12 @@ export function ConfigPanel() {
         fileName?: string;
         summary?: string;
         extractedCharacterCount?: number;
+        suggestions?: Array<{
+          type: string;
+          title: string;
+          description: string;
+          payload: Record<string, unknown>;
+        }>;
       };
 
       if (!response.ok) {
@@ -174,17 +181,21 @@ export function ConfigPanel() {
         throw new Error("No se pudo generar el resumen del archivo.");
       }
 
-      setMeetingNotes(summary);
+      const rawSuggestions = payload.suggestions ?? [];
+      const suggestions = rawSuggestions.map((s) => ({
+        ...s,
+        id: Math.random().toString(36).slice(2),
+        type: (s.type === "add_proposal" || s.type === "add_block" ? s.type : "add_proposal") as "add_proposal" | "add_block",
+      }));
 
-      const suggestions = getMockSuggestionsFromNotes(summary);
+      setMeetingNotes(summary);
       setAISuggestions(suggestions);
 
-      const chars =
-        typeof payload.extractedCharacterCount === "number" && Number.isFinite(payload.extractedCharacterCount)
-          ? payload.extractedCharacterCount
-          : summary.length;
-
-      setSuggestionMessage(`Archivo procesado (${chars} caracteres). Resumen cargado en Notas IA.`);
+      if (suggestions.length === 0) {
+        setSuggestionMessage("✓ Archivo analizado. No se encontraron sugerencias inmediatas.");
+      } else {
+        setSuggestionMessage(`✓ Archivo analizado. Gemini generó ${suggestions.length} sugerencia(s).`);
+      }
     } catch (error) {
       setNotesError(error instanceof Error ? error.message : "No se pudo procesar el archivo.");
     } finally {
@@ -236,16 +247,57 @@ export function ConfigPanel() {
     }
   };
 
-  const handleAnalyzeWithIA = () => {
-    const suggestions = getMockSuggestionsFromNotes(documentData.meetingNotes ?? "");
-    setAISuggestions(suggestions);
+  const handleAnalyzeWithIA = async () => {
+    const notes = documentData.meetingNotes?.trim() ?? "";
 
-    if (suggestions.length === 0) {
-      setSuggestionMessage("No se encontraron sugerencias relevantes.");
+    if (!notes) {
+      setSuggestionMessage("Escribí o pegá el brief antes de analizar.");
       return;
     }
 
-    setSuggestionMessage(`Se generaron ${suggestions.length} sugerencia(s).`);
+    setIsAnalyzing(true);
+    setSuggestionMessage(null);
+
+    try {
+      const response = await fetch("/api/ai/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+
+      const payload = (await response.json()) as {
+        error?: string;
+        suggestions?: Array<{
+          type: string;
+          title: string;
+          description: string;
+          payload: Record<string, unknown>;
+        }>;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo analizar con IA.");
+      }
+
+      const rawSuggestions = payload.suggestions ?? [];
+      const suggestions = rawSuggestions.map((s) => ({
+        ...s,
+        id: Math.random().toString(36).slice(2),
+        type: (s.type === "add_proposal" || s.type === "add_block" ? s.type : "add_proposal") as "add_proposal" | "add_block",
+      }));
+
+      setAISuggestions(suggestions);
+
+      if (suggestions.length === 0) {
+        setSuggestionMessage("Gemini no encontró sugerencias específicas para este brief.");
+      } else {
+        setSuggestionMessage(`✓ Gemini generó ${suggestions.length} sugerencia(s) basadas en el brief.`);
+      }
+    } catch (error) {
+      setSuggestionMessage(error instanceof Error ? error.message : "No se pudo analizar con IA.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleApplySuggestion = (suggestionId: string) => {
@@ -662,8 +714,13 @@ export function ConfigPanel() {
           />
         </label>
 
-        <button type="button" className="sumar-button-secondary w-full" onClick={handleAnalyzeWithIA}>
-          Analizar con IA
+        <button
+          type="button"
+          className="sumar-button-secondary w-full"
+          onClick={handleAnalyzeWithIA}
+          disabled={isAnalyzing || isImportingNotes}
+        >
+          {isAnalyzing ? "Analizando con Gemini…" : "Analizar con IA"}
         </button>
 
         {suggestionMessage ? <p className="text-xs text-zinc-400">{suggestionMessage}</p> : null}

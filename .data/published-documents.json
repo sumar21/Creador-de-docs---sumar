@@ -161,5 +161,90 @@
     "createdAt": "2026-03-04T16:25:21.490Z",
     "updatedAt": "2026-03-04T16:25:21.490Z",
     "status": "published"
+  },
+  "qp4wvvav4e": {
+    "slug": "qp4wvvav4e",
+    "data": {
+      "docType": "proposal",
+      "client": {
+        "name": "Cliente Demo"
+      },
+      "proposals": [
+        {
+          "id": "p1",
+          "title": "Propuesta A",
+          "currency": "ARS",
+          "total": 1500000,
+          "note": "Incluye soporte"
+        }
+      ],
+      "meetingNotes": "Notas de prueba"
+    },
+    "createdAt": "2026-03-04T17:47:32.838Z",
+    "updatedAt": "2026-03-04T17:47:32.838Z",
+    "status": "published"
+  },
+  "z7p7ybrb6r": {
+    "slug": "z7p7ybrb6r",
+    "data": {
+      "docType": "proposal",
+      "client": {
+        "name": "Cliente"
+      },
+      "proposals": [
+        {
+          "id": "DDzk3osFfrWjGEDr3mIW3",
+          "title": "Propuesta A",
+          "currency": "ARS",
+          "total": 0,
+          "supportHourlyRate": 0,
+          "note": ""
+        }
+      ],
+      "meetingNotes": "- El cliente busca implementar un nuevo flujo para su Módulo de Compras, incorporando una etapa de Solicitud de Pedido/Presupuesto (SOLPE).\n- La finalidad es ordenar el proceso, comparar proveedores y reducir reprocesos en su gestión de compras.\n- El nuevo flujo detalla la creación de SOLPE sin precio ni proveedor, su envío manual a proveedores y la posterior generación de la Orden de Compra (OC) con edición de precios.\n- Requieren la integración de ABM de artículos y proveedores dentro del módulo de compras.\n- Mencionaron posibles funcionalidades futuras como la segmentación de artículos y la conexión con stock.\n- Se trata de un proyecto de desarrollo o customización de software para optimizar procesos internos.",
+      "aiSuggestions": [
+        {
+          "id": "yx3lagpb6vo",
+          "type": "add_proposal",
+          "title": "Propuesta de Desarrollo Módulo",
+          "description": "Ustedes necesitan desarrollar o customizar un módulo de compras, por lo que una propuesta de desarrollo de software es clave.",
+          "payload": {
+            "title": "Desarrollo Módulo Compras",
+            "currency": "ARS"
+          }
+        },
+        {
+          "id": "e5cpymjvxo",
+          "type": "add_block",
+          "title": "Alcance del Proyecto",
+          "description": "Los requerimientos de flujo y funcionalidades detalladas ameritan definir un alcance claro del desarrollo para ustedes.",
+          "payload": {
+            "blockType": "scope"
+          }
+        },
+        {
+          "id": "ttrmu5uu9md",
+          "type": "add_block",
+          "title": "Cronograma de Implementación",
+          "description": "Un proyecto de esta índole siempre se beneficia de un cronograma con hitos y entregables definidos para ustedes.",
+          "payload": {
+            "blockType": "timeline"
+          }
+        },
+        {
+          "id": "zxyvjkenpgs",
+          "type": "add_proposal",
+          "title": "Soporte y Evolución Post-Lanzamiento",
+          "description": "Las menciones de funcionalidades futuras sugieren que a ustedes les vendría bien un plan de soporte y evolución para el módulo después de su implementación.",
+          "payload": {
+            "title": "Soporte y Evolución",
+            "currency": "ARS"
+          }
+        }
+      ]
+    },
+    "createdAt": "2026-03-10T21:15:18.508Z",
+    "updatedAt": "2026-03-10T21:15:18.508Z",
+    "status": "published"
   }
 }
