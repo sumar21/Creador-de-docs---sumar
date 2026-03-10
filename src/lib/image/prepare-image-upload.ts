@@ -1,5 +1,3 @@
-"use client";
-
 const SVG_MIME_TYPES = new Set(["image/svg+xml"]);
 
 type CompressImageOptions = {

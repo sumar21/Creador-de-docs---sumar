@@ -50,6 +50,19 @@ export class SupabaseDocumentRepository implements DocumentRepository {
     return JSON.parse(text) as T;
   }
 
+  private isValidRow(row: unknown): row is SupabaseDocumentRow {
+    if (!row || typeof row !== "object") return false;
+    const r = row as Record<string, unknown>;
+    return (
+      typeof r.slug === "string" &&
+      typeof r.data === "object" &&
+      r.data !== null &&
+      typeof r.created_at === "string" &&
+      typeof r.updated_at === "string" &&
+      r.status === "published"
+    );
+  }
+
   private toRecord(row: SupabaseDocumentRow): PublishedDocumentRecord {
     return {
       slug: row.slug,
@@ -62,13 +75,17 @@ export class SupabaseDocumentRepository implements DocumentRepository {
 
   async getBySlug(slug: string): Promise<PublishedDocumentRecord | null> {
     const encodedSlug = encodeURIComponent(slug);
-    const rows = await this.request<SupabaseDocumentRow[]>(
+    const rows = await this.request<unknown[]>(
       `?slug=eq.${encodedSlug}&select=slug,data,created_at,updated_at,status&limit=1`,
       { method: "GET" },
     );
 
     const row = rows[0];
-    return row ? this.toRecord(row) : null;
+    if (!row) return null;
+    if (!this.isValidRow(row)) {
+      throw new Error(`Supabase returned an unexpected row shape for slug "${slug}".`);
+    }
+    return this.toRecord(row);
   }
 
   async slugExists(slug: string): Promise<boolean> {

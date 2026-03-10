@@ -64,13 +64,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     });
 
-    const targetUrl = new URL(`/p/${slug}?print=1`, getRequestOrigin(request)).toString();
+    const safeSlug = encodeURIComponent(slug);
+    const targetUrl = new URL(`/p/${safeSlug}?print=1`, getRequestOrigin(request)).toString();
 
     await page.goto(targetUrl, {
       waitUntil: "domcontentloaded",
       timeout: 45_000,
     });
-    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch((err: unknown) => {
+      console.warn("[pdf/route] networkidle timeout — proceeding with partial load:", err instanceof Error ? err.message : err);
+    });
 
     await page.emulateMedia({ media: "print" });
     await page.evaluate(async () => {

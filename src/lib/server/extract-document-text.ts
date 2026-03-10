@@ -1,5 +1,5 @@
 import mammoth from "mammoth";
-import { PDFParse } from "pdf-parse";
+import pdfParse from "pdf-parse";
 
 export const MAX_NOTES_FILE_SIZE_BYTES = 12 * 1024 * 1024;
 
@@ -62,14 +62,8 @@ export function validateNotesFile(file: File): NotesFileValidationResult {
 }
 
 async function extractFromPdf(buffer: Buffer): Promise<string> {
-  const parser = new PDFParse({ data: buffer });
-
-  try {
-    const result = await parser.getText();
-    return result.text ?? "";
-  } finally {
-    await parser.destroy();
-  }
+  const result = await pdfParse(buffer);
+  return result.text ?? "";
 }
 
 async function extractFromDocx(buffer: Buffer): Promise<string> {

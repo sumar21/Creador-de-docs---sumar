@@ -32,6 +32,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 import type { DocumentData, ProposalOption } from "@/lib/types/document";
+import { getAutoSupportHourlyRate, getProposalSupportHourlyRate } from "@/lib/utils/proposal";
 
 type ProposalDocumentProps = {
   data: DocumentData;
@@ -157,17 +158,6 @@ function formatCurrency(value: number, currency: "ARS" | "USD"): string {
   return formatted.replace(/\u00a0/g, " ");
 }
 
-function getAutoSupportHourlyRate(total: number): number {
-  return Math.round(total * 0.2);
-}
-
-function getProposalSupportHourlyRate(proposal: ProposalOption): number {
-  if (typeof proposal.supportHourlyRate === "number" && Number.isFinite(proposal.supportHourlyRate) && proposal.supportHourlyRate >= 0) {
-    return proposal.supportHourlyRate;
-  }
-
-  return getAutoSupportHourlyRate(proposal.total);
-}
 
 function AccentLabel({ children, animate = true }: { children: React.ReactNode; animate?: boolean }) {
   if (!animate) {

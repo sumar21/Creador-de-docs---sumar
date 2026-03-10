@@ -9,10 +9,19 @@ type StoreShape = Record<string, PublishedDocumentRecord>;
 
 const DEFAULT_LOCAL_DATA_DIR = path.join(process.cwd(), ".data");
 const SERVERLESS_DATA_DIR = path.join("/tmp", "sumar-proposal-builder-data");
+const isServerless = !process.env.PUBLISHED_DOCUMENTS_DATA_DIR && process.cwd().startsWith("/var/task");
 const DATA_DIR =
   process.env.PUBLISHED_DOCUMENTS_DATA_DIR ||
-  (process.cwd().startsWith("/var/task") ? SERVERLESS_DATA_DIR : DEFAULT_LOCAL_DATA_DIR);
+  (isServerless ? SERVERLESS_DATA_DIR : DEFAULT_LOCAL_DATA_DIR);
 const DATA_FILE = path.join(DATA_DIR, "published-documents.json");
+
+if (isServerless) {
+  console.warn(
+    "[local-json-repo] WARNING: Running in serverless mode without PUBLISHED_DOCUMENTS_DATA_DIR. " +
+      "Data in /tmp does NOT persist between function invocations. " +
+      "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for production use.",
+  );
+}
 
 let writeQueue = Promise.resolve();
 

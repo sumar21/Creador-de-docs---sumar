@@ -29,7 +29,7 @@ export const aiSuggestionSchema = z.object({
 export const draftDocumentDataSchema = z.object({
   docType: z.enum(["proposal", "manual"]),
   client: z.object({
-    name: z.string().max(140),
+    name: z.string().trim().max(140),
     logoUrl: z.string().url().or(z.string().startsWith("data:image/")).optional(),
   }),
   proposals: z.array(draftProposalOptionSchema).min(1).max(3),

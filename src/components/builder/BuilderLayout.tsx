@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ConfigPanel } from "@/components/builder/ConfigPanel";
 import { PublishActions } from "@/components/builder/PublishActions";
@@ -29,6 +29,7 @@ export function BuilderLayout() {
   const [ready, setReady] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const exportingPdfRef = useRef(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [publishResult, setPublishResult] = useState<PublishResponse | null>(null);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
@@ -97,6 +98,9 @@ export function BuilderLayout() {
         }
 
         publishSuccess(payload.slug);
+        // Persist the draft immediately so lastPublishedSlug is saved.
+        // publishSuccess sets saveState to "saved", so the auto-save effect won't fire.
+        saveDraft(getPersistedState());
         setPublishResult(payload);
 
         if (showModal) {
@@ -111,7 +115,7 @@ export function BuilderLayout() {
         setPublishing(false);
       }
     },
-    [documentData, manualSelected, publishSuccess],
+    [documentData, getPersistedState, manualSelected, publishSuccess],
   );
 
   const handlePublish = useCallback(() => {
@@ -155,11 +159,15 @@ export function BuilderLayout() {
   }, []);
 
   const handleExportPdf = useCallback(async () => {
+    // Guard against concurrent invocations (e.g. double-click).
+    if (exportingPdfRef.current) return;
+
     if (manualSelected) {
       setActionError("Manual está en desarrollo: PDF no disponible por ahora.");
       return;
     }
 
+    exportingPdfRef.current = true;
     setActionError(null);
     setExportingPdf(true);
 
@@ -177,6 +185,7 @@ export function BuilderLayout() {
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "No se pudo exportar el PDF.");
     } finally {
+      exportingPdfRef.current = false;
       setExportingPdf(false);
     }
   }, [docStatus, downloadPdfBySlug, lastPublishedSlug, manualSelected, publishDocument]);
