@@ -102,7 +102,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     });
 
-    const targetUrl = new URL(`/p/${slug}?print=1`, getRequestOrigin(request)).toString();
+    // Use localhost to avoid Vercel Authentication on preview deployments.
+    // The API route and the page run on the same server, so localhost always works.
+    const port = process.env.PORT || new URL(request.url).port || "3000";
+    const internalOrigin = `http://localhost:${port}`;
+    const targetUrl = new URL(`/p/${slug}?print=1`, internalOrigin).toString();
 
     await page.goto(targetUrl, {
       waitUntil: "domcontentloaded",
